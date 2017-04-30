@@ -1,28 +1,33 @@
-options(repos = c(CRAN = "https://cran.revolutionanalytics.com"))
+#options(repos = c(CRAN = "https://cran.revolutionanalytics.com"))
 
-install.packages(c("bnlearn", "igraph"))
+#install.packages(c("bnlearn", "igraph"))
 
-source("http://bioconductor.org/biocLite.R")
-biocLite(c("graph", "Rgraphviz", "RBGL"))
-install.packages("gRain")
+#source("http://bioconductor.org/biocLite.R")
+#biocLite(c("graph", "Rgraphviz", "RBGL"))
+#install.packages("gRain")
 
-library(devtools)
-install_github("zdk123/SpiecEasi")
+#library(devtools)
+#install_github("zdk123/SpiecEasi")
+
 library(SpiecEasi)
-
 library(graph)
 library(bnlearn)
 library(pcalg)
 library(igraph)
 library(Rgraphviz)
 
-load('data/amgut1.filt.rda')
+load('data/amg/amgut1.filt.rda')
 data = amgut1.filt
 norm_data = t(clr(data+1, 1))
+
+nzero <- (data >= tol)
+LOG <- log(ifelse(nzero, data, 1), base)
+ifelse(nzero, LOG - mean(LOG)/mean(nzero), 0.0)
 
 # Number of nodes
 n = dim(norm_data)[1]
 p = dim(norm_data)[2]
+
 # Inclusion prob
 
 ## use predefined test for conditional independence on gaussian data
@@ -34,7 +39,7 @@ suffStat <- list(C = cor(norm_data), n = n)
 ## estimate the causal structure
 pc.fit <- pc(suffStat, indepTest, p = p, alpha = 0.001)
 
-se.mb.amgut <- spiec.easi(amgut1.filt, method='mb', lambda.min.ratio=1e-2,
+se.mb.amgut <- spiec.easi(norm_data, method='mb', lambda.min.ratio=1e-2,
                           nlambda=20, icov.select.params=list(rep.num=50))
 se.gl.amgut <- spiec.easi(amgut1.filt, method='glasso', lambda.min.ratio=1e-2,
                           nlambda=20, icov.select.params=list(rep.num=50))
@@ -60,6 +65,16 @@ plot(ig.mb, layout=am.coord, vertex.size=vsize, vertex.label=NA, main="MB")
 plot(ig.gl, layout=am.coord, vertex.size=vsize, vertex.label=NA, main="glasso")
 plot(ig.sparcc, layout=am.coord, vertex.size=vsize, vertex.label=NA, main="sparcc")
 plot(ig.pc, layout=am.coord, vertex.size=vsize, vertex.label=NA, main="PC Algo (.001)")
+
+library(Matrix)
+elist.gl <- summary(triu(cov2cor(se.gl.amgut$opt.cov)*se.gl.amgut$refit, k=1))
+elist.mb <- summary(symBeta(getOptBeta(se.mb.amgut), mode='maxabs'))
+elist.sparcc <- summary(sparcc.graph*sparcc.amgut$Cor)
+
+hist(elist.sparcc[,3], main="", xlab="edge weights")
+hist(elist.mb[,3], add=TRUE, col='forestgreen')
+hist(elist.gl[,3], add=TRUE, col='red')
+
 
 dd.gl <- degree.distribution(ig.pc)
 
