@@ -75,8 +75,8 @@ spiec_easi_analysis = function(data, tax) {
   vsize <- rowMeans(clr(data, 1))+6
   am.coord <- layout.fruchterman.reingold(ig.mb)
 
-  plot(ig.mb, layout=am.coord, vertex.size=vsize, vertex.label=NA, main="MB")
   plot(ig.gl, layout=am.coord, vertex.size=vsize, vertex.label=NA, main="glasso")
+  plot(ig.mb, layout=am.coord, vertex.size=vsize, vertex.label=NA, main="MB")
   plot(ig.sparcc, layout=am.coord, vertex.size=vsize, vertex.label=NA, main="sparcc")
   plot(ig.pc, layout=am.coord, vertex.size=vsize, vertex.label=NA, main="PC Algo (.05)")
 
@@ -94,10 +94,9 @@ spiec_easi_analysis = function(data, tax) {
   dd.mb <- degree.distribution(ig.mb)
   dd.sparcc <- degree.distribution(ig.sparcc)
 
-  plot(0:(length(dd.sparcc)-1), dd.sparcc, ylim=c(0,.35), type='b',
-       ylab="Frequency", xlab="Degree", main="Degree Distributions")
-  points(0:(length(dd.gl)-1), dd.gl, col="red" , type='b')
-  points(0:(length(dd.mb)-1), dd.mb, col="forestgreen", type='b')
+  plot(0:(length(dd.mb)-1), dd.mb, col="red" , type='b', ylab="Frequency", xlab="Degree", main="Degree Distributions", ylim=c(0, .40))
+  points(0:(length(dd.sparcc)-1), dd.sparcc, type='b')
+  points(0:(length(dd.gl)-1), dd.gl, col="forestgreen", type='b')
   legend("topright", c("MB", "glasso", "sparcc"),
          col=c("forestgreen", "red", "black"), pch=1, lty=1)
 
@@ -112,6 +111,7 @@ spiec_easi_analysis = function(data, tax) {
 
   ig2.mb <- adj2igraph(se.gl.amgut$refit,  vertex.attr=list(name=taxa_names(mct.phy)))
   plot_network(ig2.mb, tax, type='taxa', color="Order", label=NULL)
+  ig2.mb
 }
 
 mct.otu.tax <- as.matrix(read.delim("results/taxatable-subset.txt", row.names =  1,  sep="\t", as.is=T))
@@ -123,4 +123,6 @@ mct.tax <- tax_table(mct.otu.tax)
 
 mct.phy <- phyloseq(mct.otu, mct.tax)
 
-spiec_easi_analysis(mct.otu.pre.l7, mct.phy)
+ig2.mb <- spiec_easi_analysis(mct.otu.pre.l7, mct.phy)
+plot_network(ig2.mb, tax, type='taxa', color="Class", label=NULL)
+
