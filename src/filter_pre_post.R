@@ -4,6 +4,7 @@ library(SpiecEasi)
 library(Matrix)
 library(pcalg)
 library(graph)
+library(plyr)
 
 ## Load Pre and Post Datasets
 mct.otu.pre <- read.delim("data/mct-v3/otutable-subset-n50000-s10-norm-no-soylent-no-transition-pre.txt", sep="\t", row = 1, as.is=T, skip = 1)
@@ -83,17 +84,26 @@ dim(mct.otu.pre.filt.l7)
 dim(mct.otu.post.filt.l7)
 
 norm.otu <- clr_norm(cbind(mct.otu.pre.filt.l7, mct.otu.post.filt.l7))
-time_col <- as.matrix(rep("post", dim(norm.otu)[1]))
-time_col[1:dim(mct.otu.pre.filt.l7)[2]] <- "pre"
-colnames(time_col) <- "time"
-norm.otu <- cbind(norm.otu, time_col)
 
 mapping <- read.delim("data/mct-v3/map-subset.txt", sep="\t", row = 1, as.is=T)
-norm.otu[match(rownames(mapping), rownames(norm.otu)),]
 
-dim(merge(t(mapping), t(norm.otu)))
+mapping <- mapping[c("Supplement", "Treatment")]
 
+norm.mapping.otu <- cbind(norm.otu, mapping[match(rownames(norm.otu), rownames(mapping)),])
 
-write.table(norm.otu, file = "results/mct.otu.filt.l7.clr.txt", sep="\t")
+write.table(norm.mapping.otu, file = "results/mct.otu.filt.l7.clr.txt", sep="\t")
 
-# write.table(, file = "results/mct.otu.post.filt.l7.clr.txt", sep="\t")
+library(bnlearn)
+library(parallel)
+# Calculate the number of cores
+no_cores <- detectCores() - 1
+
+# Initiate cluster
+cl <- makeCluster(no_cores)
+
+norm.mapping.otu$Supplement <- as.factor(norm.mapping.otu$Supplement)
+# norm.mapping.otu$Treatment <- as.factor(norm.mapping.otu$Treatment)
+drops <- c("Treatment")
+xval = bn.cv(norm.mapping.otu[, !names(norm.mapping.otu) %in% drops], cluster=cl, bn = "hc", loss = "pred-lw-cg", loss.args = list(target = "Supplement"))
+
+stopCluster(cl)
