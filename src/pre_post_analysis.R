@@ -26,6 +26,21 @@ summarize_taxonomy = function(data, level=3) {
   data[,-1]
 }
 
+rbind.match.columns <- function(input1, input2) {
+  n.input1 <- ncol(input1)
+  n.input2 <- ncol(input2)
+
+  if (n.input2 < n.input1) {
+    TF.names <- which(names(input2) %in% names(input1))
+    column.names <- names(input2[, TF.names])
+  } else {
+    TF.names <- which(names(input1) %in% names(input2))
+    column.names <- names(input1[, TF.names])
+  }
+
+  return(rbind(input1[, column.names], input2[, column.names]))
+}
+
 # feature x samples
 clr_norm <- function(data) {
   data = t(data)
@@ -49,7 +64,7 @@ fit_pc <- function(data) {
 
 # feature x samples
 prevalence_filt <- function(data, thresh=.1) {
-  data[rowMeans(data > 0) >= thresh,]
+  rowMeans(data > 0) >= thresh
 }
 
 spiec_easi_analysis = function(data, tax, basename) {
@@ -107,31 +122,39 @@ spiec_easi_analysis = function(data, tax, basename) {
   dd.gl <- degree.distribution(ig.gl)
   dd.mb <- degree.distribution(ig.mb)
   dd.sparcc <- degree.distribution(ig.sparcc)
+  dd.pc <- degree.distribution(ig.pc)
 
   png(filename=sprintf("%s-dd.png", basename))
   plot(0:(length(dd.mb)-1), dd.mb, col="red" , type='b', ylab="Frequency", xlab="Degree", main="Degree Distributions", ylim=c(0, .40))
   points(0:(length(dd.sparcc)-1), dd.sparcc, type='b')
   points(0:(length(dd.gl)-1), dd.gl, col="forestgreen", type='b')
-  legend("topright", c("MB", "glasso", "sparcc"),
-         col=c("forestgreen", "red", "black"), pch=1, lty=1)
+  points(0:(length(dd.pc)-1), dd.pc, col="blue", type='b')
+  legend("topright", c("MB", "glasso", "sparcc", "PC"),
+         col=c("forestgreen", "red", "black", "blue"), pch=1, lty=1)
   dev.off()
 
-  c(gl=ig.gl, mb=ig.mb, pc=ig.pc, sparcc=ig.sparcc)
+  list(gl=ig.gl, mb=ig.mb, pc=ig.pc, sparcc=ig.sparcc, pc.fit=pc.fit)
 }
 
 ## Collapse the Datasets by Species
 mct.otu.pre.l7 = summarize_taxonomy(mct.otu.pre, level=7)
 mct.otu.post.l7 = summarize_taxonomy(mct.otu.post, level=7)
+
 dim(mct.otu.pre.l7)
 dim(mct.otu.post.l7)
 
 
 ## Remove Low Prevalence Taxa
 ## Microbes Must Be Present in Greater than 10% of Samples
-mct.otu.pre.filt.l7 <- prevalence_filt(mct.otu.pre.l7)
-mct.otu.post.filt.l7 <- prevalence_filt(mct.otu.post.l7)
+filter.taxa <- prevalence_filt(cbind(mct.otu.pre.l7, mct.otu.post.l7))
+
+mct.otu.pre.filt.l7 <- mct.otu.pre.l7[filter.taxa,]
+mct.otu.post.filt.l7 <- mct.otu.post.l7[filter.taxa,]
+
 dim(mct.otu.pre.filt.l7)
 dim(mct.otu.post.filt.l7)
+
+clr_norm(mct.otu.pre.filt.l7)
 
 ## Counts per Genome
 png(filename="results/plots-hist-mct-otu-pre-filt-l7.png")
