@@ -26,6 +26,7 @@ summarize_taxonomy = function(data, level=3) {
   data[,-1]
 }
 
+# feature x samples
 clr_norm <- function(data) {
   data = t(data)
   t(clr(data+1, 1))
@@ -46,14 +47,14 @@ fit_pc <- function(data) {
   pc.fit <- pc(suffStat, indepTest, p = p, alpha = 0.05)
 }
 
-## Collapse the Datasets
-mct.otu.pre.l7 = summarize_taxonomy(mct.otu.pre, level=7)
-mct.otu.post.l7 = summarize_taxonomy(mct.otu.post, level=7)
-# mct.food.l3 = summarize_taxonomy(mct.food, level=3)
+# feature x samples
+prevalence_filt <- function(data, thresh=.1) {
+  data[rowMeans(data > 0) >= thresh,]
+}
 
-spiec_easi_analysis = function(data, tax) {
+spiec_easi_analysis = function(data, tax, basename) {
   pc.fit = fit_pc(data)
-  ig.pc = graph_from_adjacency_matrix(as(pc.fit@graph, 'matrix'))
+  ig.pc = adj2igraph(as(pc.fit@graph, 'matrix'), vertex.attr=list(name=taxa_names(tax)))
 
   se.mb.amgut <- spiec.easi(data, method='mb', lambda.min.ratio=1e-2,
                             nlambda=20, icov.select.params=list(rep.num=50))
@@ -66,19 +67,30 @@ spiec_easi_analysis = function(data, tax) {
   diag(sparcc.graph) <- 0
   sparcc.graph <- Matrix(sparcc.graph, sparse=TRUE)
   ## Create igraph objects
-  ig.mb <- adj2igraph(se.mb.amgut$refit)
-  ig.gl <- adj2igraph(se.gl.amgut$refit)
-  ig.sparcc <- adj2igraph(sparcc.graph)
+  ig.mb <- adj2igraph(se.mb.amgut$refit, vertex.attr=list(name=taxa_names(tax)))
+  ig.gl <- adj2igraph(se.gl.amgut$refit, vertex.attr=list(name=taxa_names(tax)))
+  ig.sparcc <- adj2igraph(sparcc.graph, vertex.attr=list(name=taxa_names(tax)))
 
 
   ## set size of vertex proportional to clr-mean
   vsize <- rowMeans(clr(data, 1))+6
   am.coord <- layout.fruchterman.reingold(ig.mb)
 
+  png(filename=sprintf("%s-gl.png", basename))
   plot(ig.gl, layout=am.coord, vertex.size=vsize, vertex.label=NA, main="glasso")
+  dev.off()
+
+  png(filename=sprintf("%s-mb.png", basename))
   plot(ig.mb, layout=am.coord, vertex.size=vsize, vertex.label=NA, main="MB")
+  dev.off()
+
+  png(filename=sprintf("%s-sparcc.png", basename))
   plot(ig.sparcc, layout=am.coord, vertex.size=vsize, vertex.label=NA, main="sparcc")
+  dev.off()
+
+  png(filename=sprintf("%s-pc.png", basename))
   plot(ig.pc, layout=am.coord, vertex.size=vsize, vertex.label=NA, main="PC Algo (.05)")
+  dev.off()
 
 
   elist.gl <- summary(triu(cov2cor(se.gl.amgut$opt.cov)*se.gl.amgut$refit, k=1))
@@ -86,43 +98,89 @@ spiec_easi_analysis = function(data, tax) {
   elist.sparcc <- summary(sparcc.graph*sparcc.amgut$Cor)
 
 
+  png(filename=sprintf("-dd-hist.png", basename))
   hist(elist.sparcc[,3], main="", xlab="edge weights")
   hist(elist.mb[,3], add=TRUE, col='forestgreen')
   hist(elist.gl[,3], add=TRUE, col='red')
+  dev.off()
 
   dd.gl <- degree.distribution(ig.gl)
   dd.mb <- degree.distribution(ig.mb)
   dd.sparcc <- degree.distribution(ig.sparcc)
 
+  png(filename=sprintf("%s-dd.png", basename))
   plot(0:(length(dd.mb)-1), dd.mb, col="red" , type='b', ylab="Frequency", xlab="Degree", main="Degree Distributions", ylim=c(0, .40))
   points(0:(length(dd.sparcc)-1), dd.sparcc, type='b')
   points(0:(length(dd.gl)-1), dd.gl, col="forestgreen", type='b')
   legend("topright", c("MB", "glasso", "sparcc"),
          col=c("forestgreen", "red", "black"), pch=1, lty=1)
+  dev.off()
 
-  ig2.mb <- adj2igraph(se.mb.amgut$refit,  vertex.attr=list(name=taxa_names(mct.phy)))
-  plot_network(ig2.mb, tax, type='taxa', color="Kingdom", label=NULL)
-  plot_network(ig2.mb, tax, type='taxa', color="Phylum", label=NULL)
-  plot_network(ig2.mb, tax, type='taxa', color="Class", label=NULL)
-  plot_network(ig2.mb, tax, type='taxa', color="Order", label=NULL)
-  plot_network(ig2.mb, tax, type='taxa', color="Family", label=NULL)
-  plot_network(ig2.mb, tax, type='taxa', color="Genus", label=NULL)
-
-
-  ig2.mb <- adj2igraph(se.gl.amgut$refit,  vertex.attr=list(name=taxa_names(mct.phy)))
-  plot_network(ig2.mb, tax, type='taxa', color="Order", label=NULL)
-  ig2.mb
+  c(gl=ig.gl, mb=ig.mb, pc=ig.pc, sparcc=ig.sparcc)
 }
 
-mct.otu.tax <- as.matrix(read.delim("results/taxatable-subset.txt", row.names =  1,  sep="\t", as.is=T))
-#mct.food.tax <- as.matrix(read.delim("results/taxatable-foodtable.txt", row.names =  1,  sep="\t", as.is=T))
+## Collapse the Datasets by Species
+mct.otu.pre.l7 = summarize_taxonomy(mct.otu.pre, level=7)
+mct.otu.post.l7 = summarize_taxonomy(mct.otu.post, level=7)
+dim(mct.otu.pre.l7)
+dim(mct.otu.post.l7)
 
-mct.otu <- otu_table(mct.otu.pre.l7, taxa_are_rows = T)
+
+## Remove Low Prevalence Taxa
+## Microbes Must Be Present in Greater than 10% of Samples
+mct.otu.pre.filt.l7 <- prevalence_filt(mct.otu.pre.l7)
+mct.otu.post.filt.l7 <- prevalence_filt(mct.otu.post.l7)
+dim(mct.otu.pre.filt.l7)
+dim(mct.otu.post.filt.l7)
+
+## Counts per Genome
+png(filename="results/plots-hist-mct-otu-pre-filt-l7.png")
+otu.counts <- rowSums(mct.otu.pre.filt.l7 > 0)
+hist(otu.counts, breaks=30, main="Histogram of Taxa Counts (Pre)")
+dev.off()
+
+png(filename="results/plots-hist-mct-otu-post-filt-l7.png")
+otu.counts <- rowSums(mct.otu.post.filt.l7 > 0)
+hist(otu.counts, breaks=30, main="Histogram of Taxa Counts (Post)")
+dev.off()
+
+## Load taxonomy Table
+mct.otu.tax <- as.matrix(read.delim("results/taxatable-subset.txt", row.names =  1,  sep="\t", as.is=T))
+
+## Create the Phylogenetics Tables
+mct.otu.pre <- otu_table(mct.otu.pre.l7, taxa_are_rows = T)
+mct.otu.post <- otu_table(mct.otu.post.l7, taxa_are_rows = T)
+mct.otu.pre.filt <- otu_table(mct.otu.pre.filt.l7, taxa_are_rows = T)
+mct.otu.post.filt <- otu_table(mct.otu.post.filt.l7, taxa_are_rows = T)
+
+## Analysis Pipeline
 mct.tax <- tax_table(mct.otu.tax)
 
+## Phylo Objects
+mct.phy.pre <- phyloseq(mct.otu.pre.l7, mct.tax)
+mct.phy.post <- phyloseq(mct.otu.post.l7, mct.tax)
+mct.phy.pre.filt <- phyloseq(mct.otu.post.filt.l7, mct.tax)
+mct.phy.post.filt <- phyloseq(mct.otu.post.filt.l7, mct.tax)
 
-mct.phy <- phyloseq(mct.otu, mct.tax)
+## Create the IG2
+# Calculate the number of cores
+# no_cores <- detectCores() - 1
 
-ig2.mb <- spiec_easi_analysis(mct.otu.pre.l7, mct.phy)
-plot_network(ig2.mb, tax, type='taxa', color="Class", label=NULL)
+# Initiate cluster
+# cl <- makeCluster(4)
+
+jobs = list(list(mct.otu.pre.l7, "results/mct-otu-pre"), list(mct.otu.post.l7, "results/mct-otu-post"), list(mct.otu.post.filt.l7, "results/mct-otu-pre-filt"), list(mct.otu.post.filt.l7, "results/mct-otu-post-filt"))
+
+# clusterExport(cl, list("spiec_easi_analysis", "clr_norm", "fit_pc", "mct.tax"))
+
+mapping <- function(x) {
+  spiec_easi_analysis(x[[1]], mct.tax, x[[2]])
+}
+
+ig3 <- lapply(jobs, mapping)
+
+# ig2.pre <- spiec_easi_analysis(mct.otu.pre.l7, mct.tax, "results/mct-otu-pre")
+# ig2.post <- spiec_easi_analysis(mct.otu.post.l7, mct.tax, "results/mct-otu-post")
+# ig2.pre.filt <- spiec_easi_analysis(mct.otu.post.filt.l7, mct.tax, "results/mct-otu-pre-filt")
+# ig2.post.filt <- spiec_easi_analysis(mct.otu.post.filt.l7, mct.tax, "results/mct-otu-post-filt")
 
