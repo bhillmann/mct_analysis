@@ -140,8 +140,8 @@ spiec_easi_analysis = function(data, tax, basename) {
 }
 
 ## Collapse the Datasets by Species
-mct.otu.pre.l7 = summarize_taxonomy(mct.otu.pre, level=7)
-mct.otu.post.l7 = summarize_taxonomy(mct.otu.post, level=7)
+mct.otu.pre.l7 = summarize_taxonomy(mct.otu.pre, level=5)
+mct.otu.post.l7 = summarize_taxonomy(mct.otu.post, level=5)
 
 dim(mct.otu.pre.l7)
 dim(mct.otu.post.l7)
@@ -204,7 +204,7 @@ mapping <- function(x) {
 }
 
 ig3 <- lapply(jobs, mapping)
-save(ig3, file="results/ig3.RData")
+save(ig3, file="results/ig3.l5.RData")
 
 
 # ig2.pre <- spiec_easi_analysis(mct.otu.pre.l7, mct.tax, "results/mct-otu-pre")
