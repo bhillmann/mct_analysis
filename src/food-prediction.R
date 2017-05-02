@@ -71,7 +71,7 @@ mct.food.from <- mct.food.from[ ,prevalence_filt(mct.food.from)]
 mct.otu.from <- mct.otu.from[ ,prevalence_filt(mct.otu.from)]
 mct.otu.to <- mct.otu.to[ ,prevalence_filt(mct.otu.to)]
 
-smct.food.otu.otu <- cbind(mct.food.from, mct.otu.from, mct.otu.to)
+mct.food.otu.otu <- cbind(mct.food.from, mct.otu.from, mct.otu.to)
 mct.otu.otu <- cbind(mct.otu.from, mct.otu.to)
 mct.food.otu <- cbind(mct.food.from, mct.otu.to)
 
@@ -139,8 +139,8 @@ res <- matrix("", rows, 2)
 pos <- 1
 for (i in 1:m) {
   for (j in 1:n) {
-    x <- colnames(mct.otu.from)[i]
-    y <- colnames(mct.food.from)[j]
+    x <- colnames(mct.food.from)[i]
+    y <- colnames(mct.otu.from)[j]
     res[pos, 1] <- x
     res[pos + 1, 1] <- y
     res[pos, 2] <- y
@@ -154,7 +154,7 @@ colnames(food.from.otu.from) <- c("from", "to")
 
 
 # Create the blacklists
-blacklist.food.otu.otu <- rbind(otu.from.otu.to, food.from.otu.to, otu.from.otu.from, food.from.otu.from)
+blacklist.food.otu.otu <- rbind(food.from.otu.to, food.from.food.from, otu.from.otu.to, otu.from.otu.from, food.from.otu.from)
 dim(blacklist.food.otu.otu)
 blacklist.food.otu <- rbind(food.from.otu.to, food.from.food.from)
 dim(blacklist.food.otu)
@@ -171,11 +171,18 @@ cl <- makeCluster(no_cores)
 traits <- names(tail(sort(colSums(mct.otu.to)), 5))
 
 # norm.mapping.otu$Treatment <- as.factor(norm.mapping.otu$Treatment)
-food.val = bn.cv(as.data.frame(t(mct.food.otu)), cluster=cl, bn = "si.hiton.pc", loss = "mse", algorithm.args = list(blacklist = blacklist.food.otu), loss.args = list(target = traits[1]))
-save(food.val, file="results/mct.food.val.RData")
+# food.val = bn.cv(as.data.frame(t(mct.food.otu)), cluster=cl, bn = "si.hiton.pc", loss = "mse", algorithm.args = list(blacklist = blacklist.food.otu), loss.args = list(target = traits[1]))
+# save(food.val, file="results/mct.food.val.RData")
+#
+# otu.val = bn.cv(as.data.frame(t(mct.otu.otu)), cluster=cl, bn = "si.hiton.pc", loss = "mse", algorithm.args = list(blacklist = blacklist.otu.otu), loss.args = list(target = traits[1]))
+# save(otu.val, file="results/otu.val.RData")
 
-otu.val = bn.cv(as.data.frame(t(mct.otu.otu)), cluster=cl, bn = "si.hiton.pc", loss = "mse", algorithm.args = list(blacklist = blacklist.otu.otu), loss.args = list(target = traits[1]))
-save(otu.val, file="results/otu.val.RData")
+# mct.food.otu.otu -> as.data.frame(t(mct.food.otu.otu))
+# for (name in blacklist.food.otu.otu$from) {
+#   if (!name %in% rownames(mct.food.otu.otu)) {
+#     print(name)
+#   }
+# }
 
 food.otu.val = bn.cv(as.data.frame(t(mct.food.otu.otu)), cluster=cl, bn = "si.hiton.pc", loss = "mse", algorithm.args = list(blacklist = blacklist.food.otu.otu), loss.args = list(target = traits[1]))
 save(food.otu.val, file="results/food.otu.val.RData")
