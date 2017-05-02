@@ -121,13 +121,13 @@ blacklist_supplement <- tiers2blacklist(list("Supplement", colnames(norm.mapping
 blacklist_treatment <- tiers2blacklist(list("Treatment", colnames(norm.mapping.otu[, !names(norm.mapping.otu) %in% c("Supplement", "Treatment")])))
 
 norm.mapping.otu$Treatment <- as.factor(norm.mapping.otu$Treatment)
-s1.val = bn.cv(s1, cluster=cl, bn = "si.hiton.pc", loss = "pred-lw-cg", algorithm.args = list(blacklist = blacklist_treatment), loss.args = list(target = "Treatment"))
+s1.val = bn.cv(s1, cluster=cl, bn = "hc", loss = "pred-lw-cg", algorithm.args = list(blacklist = blacklist_treatment), loss.args = list(target = "Treatment"))
 save(s1.val, file="results/s1.l5.val.RData")
 
-s2.val = bn.cv(s2, cluster=cl, bn = "si.hiton.pc", loss = "pred-lw-cg", algorithm.args = list(blacklist = blacklist_treatment), loss.args = list(target = "Treatment"))
+s2.val = bn.cv(s2, cluster=cl, bn = "hc", loss = "pred-lw-cg", algorithm.args = list(blacklist = blacklist_treatment), loss.args = list(target = "Treatment"))
 save(s2.val, file="results/s2.l5.val.RData")
 
-pre.val = bn.cv(pre, cluster=cl, bn = "si.hiton.pc", loss = "pred-lw-cg", algorithm.args = list(blacklist = blacklist_supplement), loss.args = list(target = "Supplement"))
+pre.val = bn.cv(pre, cluster=cl, bn = "hc", loss = "pred-lw-cg", algorithm.args = list(blacklist = blacklist_supplement), loss.args = list(target = "Supplement"))
 save(pre.val, file="results/pre.l5.val.RData")
 
 post.val = bn.cv(post, cluster=cl, bn = "si.hiton.pc", loss = "pred-lw-cg", algorithm.args = list(blacklist = blacklist_supplement), loss.args = list(target = "Supplement"))

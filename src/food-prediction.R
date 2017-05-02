@@ -171,10 +171,10 @@ cl <- makeCluster(no_cores)
 traits <- names(tail(sort(colSums(mct.otu.to)), 5))
 
 # norm.mapping.otu$Treatment <- as.factor(norm.mapping.otu$Treatment)
-food.val = bn.cv(as.data.frame(t(mct.food.otu)), cluster=cl, bn = "si.hiton.pc", loss = "mse", algorithm.args = list(blacklist = blacklist.food.otu), loss.args = list(target = traits[1]))
+food.val = bn.cv(as.data.frame(t(mct.food.otu)), cluster=cl, bn = "hc", loss = "mse", algorithm.args = list(blacklist = blacklist.food.otu), loss.args = list(target = traits[1]))
 save(food.val, file="results/mct.food.l6.val.RData")
 
-otu.val = bn.cv(as.data.frame(t(mct.otu.otu)), cluster=cl, bn = "si.hiton.pc", loss = "mse", algorithm.args = list(blacklist = blacklist.otu.otu), loss.args = list(target = traits[1]))
+otu.val = bn.cv(as.data.frame(t(mct.otu.otu)), cluster=cl, bn = "hc", loss = "mse", algorithm.args = list(blacklist = blacklist.otu.otu), loss.args = list(target = traits[1]))
 save(otu.val, file="results/otu.l6.val.RData")
 
 # mct.food.otu.otu -> as.data.frame(t(mct.food.otu.otu))
@@ -184,7 +184,7 @@ save(otu.val, file="results/otu.l6.val.RData")
 #   }
 # }
 
-food.otu.val = bn.cv(as.data.frame(t(mct.food.otu.otu)), cluster=cl, bn = "si.hiton.pc", loss = "mse", algorithm.args = list(blacklist = blacklist.food.otu.otu), loss.args = list(target = traits[1]))
+food.otu.val = bn.cv(as.data.frame(t(mct.food.otu.otu)), cluster=cl, bn = "hc", loss = "mse", algorithm.args = list(blacklist = blacklist.food.otu.otu), loss.args = list(target = traits[1]))
 save(food.otu.val, file="results/food.otu.l6.val.RData")
 
 stopCluster(cl)
