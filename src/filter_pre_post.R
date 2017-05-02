@@ -89,7 +89,6 @@ norm.otu <- clr_norm(cbind(mct.otu.pre.filt.l7, mct.otu.post.filt.l7))
 
 mapping <- read.delim("data/mct-v3/map-subset.txt", sep="\t", row = 1, as.is=T)
 
-dim(merge(mapping, norm.otu, by=intersect(rownames(mapping), rownames(norm.otu))))
 mapping <- mapping[c("Supplement", "Treatment")]
 
 norm.mapping.otu <- cbind(norm.otu, mapping[match(rownames(norm.otu), rownames(mapping)),])
