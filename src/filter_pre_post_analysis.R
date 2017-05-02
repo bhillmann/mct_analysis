@@ -1,5 +1,7 @@
 load("results/s1.val.RData")
 load("results/s2.val.RData")
+load("results/pre.l5.val.RData")
+load("results/post.l5.val.RData")
 
 s1.val
 s2.val
@@ -28,4 +30,4 @@ plot_results <- function(xval) {
   # dev.off()
 }
 
-plot_results(s2.val)
+plot_results(pre.val)

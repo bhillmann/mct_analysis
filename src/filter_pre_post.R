@@ -130,7 +130,7 @@ save(s2.val, file="results/s2.l5.val.RData")
 pre.val = bn.cv(pre, cluster=cl, bn = "hc", loss = "pred-lw-cg", algorithm.args = list(blacklist = blacklist_supplement), loss.args = list(target = "Supplement"))
 save(pre.val, file="results/pre.l5.val.RData")
 
-post.val = bn.cv(post, cluster=cl, bn = "si.hiton.pc", loss = "pred-lw-cg", algorithm.args = list(blacklist = blacklist_supplement), loss.args = list(target = "Supplement"))
+post.val = bn.cv(post, cluster=cl, bn = "hc", loss = "pred-lw-cg", algorithm.args = list(blacklist = blacklist_supplement), loss.args = list(target = "Supplement"))
 save(post.val, file="results/post.l5.val.RData")
 
 stopCluster(cl)

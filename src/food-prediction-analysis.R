@@ -1,6 +1,7 @@
 load("results/mct.food.l5.val.RData")
 load("results/otu.l5.val.RData")
 load("results/food.otu.l5.val.RData")
+load("results/food.otu.val.RData")
 
 library("bnlearn")
 
@@ -9,7 +10,7 @@ plot_results <- function(xval) {
 
   for (i in seq_along(xval)) {
     run = xval[[i]]$fitted
-
+    print(arcs(run))
     arclist[[length(arclist) + 1]] = arcs(run)
   }
 
@@ -27,5 +28,5 @@ plot_results <- function(xval) {
   # dev.off()
 }
 
-# plot_results(otu.val)
+plot_results(food.otu.val)
 
