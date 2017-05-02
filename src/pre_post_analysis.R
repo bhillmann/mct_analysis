@@ -44,11 +44,11 @@ rbind.match.columns <- function(input1, input2) {
 # feature x samples
 clr_norm <- function(data) {
   data = t(data)
-  t(clr(data+1, 1))
+  clr(data+1, 1)
 }
 
 fit_pc <- function(data) {
-  norm_data = clr_norm(data)
+  norm_data = t(clr_norm(data))
 
   ## use predefined test for conditional independence on gaussian data
   indepTest <- gaussCItest
@@ -57,9 +57,10 @@ fit_pc <- function(data) {
   n = dim(norm_data)[1]
   p = dim(norm_data)[2]
 
+  print(dim(norm_data))
   suffStat <- list(C = cor(norm_data), n = n)
 
-  pc.fit <- pc(suffStat, indepTest, p = p, alpha = 0.05)
+  pc(suffStat, indepTest, labels = colnames(norm_data), alpha = 0.05, numCores=4)
 }
 
 # feature x samples
@@ -71,6 +72,8 @@ spiec_easi_analysis = function(data, tax, basename) {
   pc.fit = fit_pc(data)
   ig.pc = adj2igraph(as(pc.fit@graph, 'matrix'), vertex.attr=list(name=taxa_names(tax)))
 
+  data <- t(data)
+  dim(data)
   se.mb.amgut <- spiec.easi(data, method='mb', lambda.min.ratio=1e-2,
                             nlambda=20, icov.select.params=list(rep.num=50))
   se.gl.amgut <- spiec.easi(data, method='glasso', lambda.min.ratio=1e-2,

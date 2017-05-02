@@ -91,7 +91,7 @@ norm.otu <- cbind(norm.otu, time_col)
 mapping <- read.delim("data/mct-v3/map-subset.txt", sep="\t", row = 1, as.is=T)
 norm.otu[match(rownames(mapping), rownames(norm.otu)),]
 
-dim(merge(t(mapping), t(norm.otu)))
+dim(merge(mapping, norm.otu, by=intersect(rownames(mapping), rownames(norm.otu))))
 
 
 write.table(norm.otu, file = "results/mct.otu.filt.l7.clr.txt", sep="\t")
