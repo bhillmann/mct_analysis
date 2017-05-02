@@ -49,7 +49,7 @@ summarize_taxonomy = function(data, level=7) {
 }
 
 mct.food.l2 <- summarize_taxonomy(mct.food, level = 2)
-mct.otu.l7 <- summarize_taxonomy(mct.otu, level = 5)
+mct.otu.l7 <- summarize_taxonomy(mct.otu, level = 6)
 
 mapping.subset[c("X.SampleID.from", "X.SampleID.to")]
 
@@ -172,10 +172,10 @@ traits <- names(tail(sort(colSums(mct.otu.to)), 5))
 
 # norm.mapping.otu$Treatment <- as.factor(norm.mapping.otu$Treatment)
 food.val = bn.cv(as.data.frame(t(mct.food.otu)), cluster=cl, bn = "si.hiton.pc", loss = "mse", algorithm.args = list(blacklist = blacklist.food.otu), loss.args = list(target = traits[1]))
-save(food.val, file="results/mct.food.l5.val.RData")
+save(food.val, file="results/mct.food.l6.val.RData")
 
 otu.val = bn.cv(as.data.frame(t(mct.otu.otu)), cluster=cl, bn = "si.hiton.pc", loss = "mse", algorithm.args = list(blacklist = blacklist.otu.otu), loss.args = list(target = traits[1]))
-save(otu.val, file="results/otu.l5.val.RData")
+save(otu.val, file="results/otu.l6.val.RData")
 
 # mct.food.otu.otu -> as.data.frame(t(mct.food.otu.otu))
 # for (name in blacklist.food.otu.otu$from) {
@@ -185,7 +185,7 @@ save(otu.val, file="results/otu.l5.val.RData")
 # }
 
 food.otu.val = bn.cv(as.data.frame(t(mct.food.otu.otu)), cluster=cl, bn = "si.hiton.pc", loss = "mse", algorithm.args = list(blacklist = blacklist.food.otu.otu), loss.args = list(target = traits[1]))
-save(food.otu.val, file="results/food.otu.l5.val.RData")
+save(food.otu.val, file="results/food.otu.l6.val.RData")
 
 stopCluster(cl)
 
