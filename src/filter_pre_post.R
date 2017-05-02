@@ -108,7 +108,7 @@ norm.mapping.otu$Supplement <- as.factor(norm.mapping.otu$Supplement)
 
 s1 <- norm.mapping.otu[norm.mapping.otu$Supplement == 1,]
 s1 <- s1[, !names(norm.mapping.otu) %in% c("Supplement")]
-s2 <- norm.mapping.otu[norm.mapping.otu$Supplement == 1,]
+s2 <- norm.mapping.otu[norm.mapping.otu$Supplement == 2,]
 s2 <- s2[, !names(norm.mapping.otu) %in% c("Supplement")]
 
 pre <- norm.mapping.otu[norm.mapping.otu$Treatment == "Pre",]
