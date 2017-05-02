@@ -1,9 +1,12 @@
 library(phyloseq)
 library(igraph)
-library(SpiecEasi)
 library(Matrix)
 library(pcalg)
 library(graph)
+library(plyr)
+library(bnlearn)
+
+source("src/normalization.R")
 
 ## Load Pre and Post Datasets
 mct.otu.pre <- read.delim("data/mct-v3/otutable-subset-n50000-s10-norm-no-soylent-no-transition-pre.txt", sep="\t", row = 1, as.is=T, skip = 1)
@@ -83,17 +86,76 @@ dim(mct.otu.pre.filt.l7)
 dim(mct.otu.post.filt.l7)
 
 norm.otu <- clr_norm(cbind(mct.otu.pre.filt.l7, mct.otu.post.filt.l7))
-time_col <- as.matrix(rep("post", dim(norm.otu)[1]))
-time_col[1:dim(mct.otu.pre.filt.l7)[2]] <- "pre"
-colnames(time_col) <- "time"
-norm.otu <- cbind(norm.otu, time_col)
 
 mapping <- read.delim("data/mct-v3/map-subset.txt", sep="\t", row = 1, as.is=T)
-norm.otu[match(rownames(mapping), rownames(norm.otu)),]
 
 dim(merge(mapping, norm.otu, by=intersect(rownames(mapping), rownames(norm.otu))))
+mapping <- mapping[c("Supplement", "Treatment")]
+
+norm.mapping.otu <- cbind(norm.otu, mapping[match(rownames(norm.otu), rownames(mapping)),])
+
+write.table(norm.mapping.otu, file = "results/mct.otu.filt.l7.clr.txt", sep="\t")
+
+library(bnlearn)
+library(parallel)
+# Calculate the number of cores
+no_cores <- detectCores() - 1
+
+# Initiate cluster
+cl <- makeCluster(no_cores)
+
+norm.mapping.otu$Treatment <- as.factor(norm.mapping.otu$Treatment)
+norm.mapping.otu$Supplement <- as.factor(norm.mapping.otu$Supplement)
+
+s1 <- norm.mapping.otu[norm.mapping.otu$Supplement == 1,]
+s1 <- s1[, !names(norm.mapping.otu) %in% c("Supplement")]
+s2 <- norm.mapping.otu[norm.mapping.otu$Supplement == 2,]
+s2 <- s2[, !names(norm.mapping.otu) %in% c("Supplement")]
+
+pre <- norm.mapping.otu[norm.mapping.otu$Treatment == "Pre",]
+pre <- pre[, !names(norm.mapping.otu) %in% c("Treatment")]
+post <- norm.mapping.otu[norm.mapping.otu$Treatment == "Post",]
+post <- post[, !names(norm.mapping.otu) %in% c("Treatment")]
 
 
-write.table(norm.otu, file = "results/mct.otu.filt.l7.clr.txt", sep="\t")
+blacklist_supplement <- tiers2blacklist(list("Supplement", colnames(norm.mapping.otu[, !names(norm.mapping.otu) %in% c("Supplement", "Treatment")])))
+blacklist_treatment <- tiers2blacklist(list("Treatment", colnames(norm.mapping.otu[, !names(norm.mapping.otu) %in% c("Supplement", "Treatment")])))
 
-# write.table(, file = "results/mct.otu.post.filt.l7.clr.txt", sep="\t")
+# norm.mapping.otu$Treatment <- as.factor(norm.mapping.otu$Treatment)
+s1.val = bn.cv(s1, cluster=cl, bn = "si.hiton.pc", loss = "pred-lw-cg", algorithm.args = list(blacklist = blacklist_treatment), loss.args = list(target = "Treatment"))
+save(s1.val, file="results/s1.val.RData")
+
+s2.val = bn.cv(s2, cluster=cl, bn = "si.hiton.pc", loss = "pred-lw-cg", algorithm.args = list(blacklist = blacklist_treatment), loss.args = list(target = "Treatment"))
+save(s2.val, file="results/s2.val.RData")
+
+pre.val = bn.cv(pre, cluster=cl, bn = "si.hiton.pc", loss = "pred-lw-cg", algorithm.args = list(blacklist = blacklist_supplement), loss.args = list(target = "Supplement"))
+save(pre.val, file="results/pre.val.RData")
+
+post.val = bn.cv(post, cluster=cl, bn = "si.hiton.pc", loss = "pred-lw-cg", algorithm.args = list(blacklist = blacklist_supplement), loss.args = list(target = "Supplement"))
+save(post.val, file="results/post.val.RData")
+
+stopCluster(cl)
+
+
+arclist = list()
+relevant.nodes = list()
+
+for (i in seq_along(xval)) {
+  run = xval[[i]]$fitted
+
+  arclist[[length(arclist) + 1]] = arcs(run)
+  relevant.nodes[[length(relevant.nodes) + 1]] = list(children(run, "Supplement"), "Supplement")
+}
+
+nodes = unique(unlist(arclist))
+strength = custom.strength(arclist, nodes = nodes)
+averaged = averaged.network(strength)
+
+# relevant.nodes = nodes(averaged)[sapply(nodes, degree, object = averaged) > 0]
+relevant.nodes = unique(unlist(relevant.nodes))
+
+averaged2 = subgraph(averaged, relevant.nodes)
+strength2 = strength[(strength$from %in% relevant.nodes) & (strength$to %in% relevant.nodes), ]
+png(filename="results/plots-prediction.png")
+gR = strength.plot(averaged2, strength2, shape = "rectangle", layout = "fdp")
+dev.off()

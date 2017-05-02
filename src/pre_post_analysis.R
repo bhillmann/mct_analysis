@@ -204,6 +204,8 @@ mapping <- function(x) {
 }
 
 ig3 <- lapply(jobs, mapping)
+save(ig3, file="results/ig3.RData")
+
 
 # ig2.pre <- spiec_easi_analysis(mct.otu.pre.l7, mct.tax, "results/mct-otu-pre")
 # ig2.post <- spiec_easi_analysis(mct.otu.post.l7, mct.tax, "results/mct-otu-post")
