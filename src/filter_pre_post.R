@@ -6,6 +6,8 @@ library(graph)
 library(plyr)
 library(bnlearn)
 
+source("src/normalization.R")
+
 ## Load Pre and Post Datasets
 mct.otu.pre <- read.delim("data/mct-v3/otutable-subset-n50000-s10-norm-no-soylent-no-transition-pre.txt", sep="\t", row = 1, as.is=T, skip = 1)
 mct.otu.post <- read.delim("data/mct-v3/otutable-subset-n50000-s10-norm-no-soylent-no-transition-post.txt", sep="\t", row = 1, as.is=T, skip = 1)
