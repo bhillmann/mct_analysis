@@ -69,8 +69,8 @@ prevalence_filt <- function(data, thresh=.1) {
 }
 
 ## Collapse the Datasets by Species
-mct.otu.pre.l7 = summarize_taxonomy(mct.otu.pre, level=7)
-mct.otu.post.l7 = summarize_taxonomy(mct.otu.post, level=7)
+mct.otu.pre.l7 = summarize_taxonomy(mct.otu.pre, level=5)
+mct.otu.post.l7 = summarize_taxonomy(mct.otu.post, level=5)
 dim(mct.otu.pre.l7)
 dim(mct.otu.post.l7)
 

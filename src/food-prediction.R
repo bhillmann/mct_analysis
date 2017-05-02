@@ -49,7 +49,7 @@ summarize_taxonomy = function(data, level=7) {
 }
 
 mct.food.l2 <- summarize_taxonomy(mct.food, level = 2)
-mct.otu.l7 <- summarize_taxonomy(mct.otu, level = 6)
+mct.otu.l7 <- summarize_taxonomy(mct.otu, level = 5)
 
 mapping.subset[c("X.SampleID.from", "X.SampleID.to")]
 
